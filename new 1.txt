@@ -1,0 +1,10 @@
+https://api.sl.se/api2/LineData.json?model=[model]&key=[key]
+
+8e83dcb267ac4b03b109310a325d0dd2
+
+
+Alla busslinjer
+https://api.sl.se/api2/linedata.json?key=8e83dcb267ac4b03b109310a325d0dd2&model=line&DefaultTransportModeCode=BUS
+
+Alla hållplatser
+https://api.sl.se/api2/linedata.json?key=8e83dcb267ac4b03b109310a325d0dd2&model=site&DefaultTransportModeCode=BUS
