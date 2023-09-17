@@ -18,9 +18,15 @@ public class TrafficLabsController {
     @Autowired
     TrafficLabsService trafficLabsService;
 
-    @RequestMapping(value = "/test1", method = RequestMethod.POST)
+    @RequestMapping(value = "/JourneyPatternPointOnLine", method = RequestMethod.POST)
     public Mono<List<JsonNode>> findAll() {
         System.out.println("-------Start-------");
+        return trafficLabsService.findAll();
+    }
+
+    @RequestMapping(value = "/site", method = RequestMethod.POST)
+    public Mono<List<JsonNode>> findAll2() {
+        System.out.println("-------Start nr 2-------");
         return trafficLabsService.findAll2();
     }
 }
