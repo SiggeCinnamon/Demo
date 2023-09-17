@@ -32,54 +32,45 @@ public class TrafficLabsService {
     }
 
     public Mono<List<JsonNode>> findAll() {
-        return webClient.post()
-                .uri(URL_LINEDATA)
-                .contentType(MediaType.APPLICATION_JSON)
-                .header(HttpHeaders.ACCEPT_ENCODING, "gzip")
-                .retrieve()
-                .bodyToMono(String.class)
-                .map(jsonString -> {
-                    ObjectMapper objectMapper = new ObjectMapper();
-                    try {
-                        JsonNode root = objectMapper.readTree(jsonString);
-                        List<JsonNode> nodes = root.findParents("Result");
-                        int mostStops = findMostFrequentLineNumber(nodes);
-                        List<String> tenJPPN = extractAndCount10JPPNForLineNumber(nodes, mostStops);
-                        busLine.setMostStops(mostStops);
-                        busLine.setJppn(tenJPPN);
-                        printResults(mostStops, tenJPPN);
-                        //Built myself into a corner here.
-                        return nodes;
-                    } catch (IOException e) {
-                        System.out.println("Error");
-                        throw new RuntimeException(e);
-                    }
-                });
+        return webClient.post().uri(URL_LINEDATA).contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.ACCEPT_ENCODING, "gzip").retrieve().bodyToMono(String.class).map(jsonString -> {
+            ObjectMapper objectMapper = new ObjectMapper();
+            try {
+                JsonNode root = objectMapper.readTree(jsonString);
+                List<JsonNode> nodes = root.findParents("Result");
+                int mostStops = findMostFrequentLineNumber(nodes);
+                List<String> tenJPPN = extractAndCount10JPPNForLineNumber(nodes, mostStops);
+                busLine.setMostStops(mostStops);
+                busLine.setJppn(tenJPPN);
+                printResults(mostStops, tenJPPN);
+                //Built myself into a corner here.
+                return nodes;
+            } catch (IOException e) {
+                System.out.println("Error");
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     public Mono<List<JsonNode>> findAll2() {
-        return webClient.post()
-                .uri(URL_SITEDATA)
-                .contentType(MediaType.APPLICATION_JSON)
-                .header(HttpHeaders.ACCEPT_ENCODING, "gzip")
-                .retrieve()
-                .bodyToMono(String.class)
-                .map(jsonString -> {
-                    ObjectMapper objectMapper = new ObjectMapper();
-                    try {
-                        JsonNode root = objectMapper.readTree(jsonString);
-                        List<JsonNode> nodes = root.findParents("Result");
-                        //compareSiteNames(nodes, busLine.getJppn());
-                        printMatchingSiteNames(compareSiteNames(nodes, busLine.getJppn()));
-                        return nodes;
-                    } catch (IOException e) {
-                        System.out.println("Error");
-                        throw new RuntimeException(e);
-                    }
-                });
+        return webClient.post().uri(URL_SITEDATA).contentType(MediaType.APPLICATION_JSON).header(HttpHeaders.ACCEPT_ENCODING, "gzip").retrieve().bodyToMono(String.class).map(jsonString -> {
+            ObjectMapper objectMapper = new ObjectMapper();
+            try {
+                JsonNode root = objectMapper.readTree(jsonString);
+                List<JsonNode> nodes = root.findParents("Result");
+                //compareSiteNames(nodes, busLine.getJppn());
+                printMatchingSiteNames(compareSiteNames(nodes, busLine.getJppn()));
+                return nodes;
+            } catch (IOException e) {
+                System.out.println("Error");
+                throw new RuntimeException(e);
+            }
+        });
     }
 
-    ;
+    private int findMostFrequentLineNumber(List<JsonNode> nodes) {
+        Map<String, Long> lineNumberCounts = extractAndCountLineNumbers(nodes);
+        return lineNumberCounts.entrySet().stream().max(Map.Entry.comparingByValue()).map(entry -> Integer.parseInt(entry.getKey())).orElse(0);
+    }
 
     private Set<List<String>> compareSiteNames(List<JsonNode> nodes, List<String> jppn) {
         Set<List<String>> matchSiteNames = new HashSet<>();
@@ -117,7 +108,7 @@ public class TrafficLabsService {
                     JsonNode jObject = iterator.next();
                     if (jObject != null && jObject.has("LineNumber")) {
                         String lineNumber = jObject.get("LineNumber").asText();
-                        if (lineNumber.equals(String.valueOf(mostStops))) {//??
+                        if (lineNumber.equals(String.valueOf(mostStops))) {
                             String jppn = jObject.get("JourneyPatternPointNumber").asText();
                             if (!result.contains(jppn)) {
                                 result.add(jppn);
@@ -132,19 +123,6 @@ public class TrafficLabsService {
         }
 
         return result;
-    }
-
-    private int findMostFrequentLineNumber(List<JsonNode> nodes) {
-        Map<String, Long> lineNumberCounts = extractAndCountLineNumbers(nodes);
-        return lineNumberCounts.entrySet().stream()
-                .max(Map.Entry.comparingByValue())
-                .map(entry -> Integer.parseInt(entry.getKey()))
-                .orElse(0);
-    }
-
-    private void printResults(int mostStops, List<String> tenJPPN) {
-        System.out.println("Most stops for a line: " + mostStops);
-        System.out.println("10 JourneyPatternPointNumbers(which should be names) for " + mostStops + ":" + tenJPPN);
     }
 
     private Map<String, Long> extractAndCountLineNumbers(List<JsonNode> nodes) {
@@ -162,7 +140,11 @@ public class TrafficLabsService {
                 }
             }
         }
-
         return lineNumberCounts;
+    }
+
+    private void printResults(int mostStops, List<String> tenJPPN) {
+        System.out.println("Most stops for a line: " + mostStops);
+        System.out.println("10 JourneyPatternPointNumbers(which should be names) for " + mostStops + ":" + tenJPPN);
     }
 }
